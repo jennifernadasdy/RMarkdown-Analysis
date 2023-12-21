@@ -1,0 +1,337 @@
+---
+title: "Nutritional Analysis of Starbucks Beverages"
+author: "Jennifer Nadasdy"
+date: "2023-12-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse) # for data manipulation and visualization
+library(readr) # for reading data
+```
+
+```{r}
+# Read the data from the Tidy Tuesday GitHub repository
+starbucks <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-12-21/starbucks.csv')
+```
+## Nutritional Analysis of Starbucks Beverages
+
+This analysis aims to explore the nutritional content of Starbucks beverages across different drink categories. We focus on three main nutritional metrics: calories, fat, and sugar.
+
+```{r}
+# Drink categories need to be extracted from the product_name
+# A new variable 'category' is created based on the product names
+
+starbucks2 <- starbucks %>%
+  mutate(category = case_when(
+    str_detect(product_name, "coffee") ~ "Coffee",
+    str_detect(product_name, "Coffee") ~ "Coffee",
+    str_detect(product_name, "Caffè") ~ "Coffee",
+    str_detect(product_name, "Brew") ~ "Coffee",
+    str_detect(product_name, "Cappuccino") ~ "Coffee",
+    str_detect(product_name, "Macchiato") ~ "Coffee",
+    str_detect(product_name, "Latte") ~ "Coffee",
+    str_detect(product_name, "Espresso") ~ "Coffee",
+    str_detect(product_name, "Mocha") ~ "Coffee",
+    str_detect(product_name, "frappuccino") ~ "Coffee",
+    str_detect(product_name, "Frappuccino") ~ "Coffee",
+    str_detect(product_name, "Flat") ~ "Coffee",
+    str_detect(product_name, "tea") ~ "Tea",
+    str_detect(product_name, "Tea") ~ "Tea",
+    str_detect(product_name, "Chocolate") ~ "Chocolate drink",
+    str_detect(product_name, "Doubleshot") ~ "Coffee",
+    str_detect(product_name, "Smoothie") ~ "Smoothie",
+    str_detect(product_name, "Refreshers") ~ "Tea",
+    TRUE ~ "Other"
+  ))
+
+```
+
+
+## Exploratory data analysis with useful visualizations
+
+```{r}
+# Summarize the average nutritional content by category
+nutritional_summary <- starbucks2 %>%
+  group_by(category) %>%
+  summarise(
+    Average_Calories = mean(calories, na.rm = TRUE),
+    Average_Fat = mean(total_fat_g, na.rm = TRUE),
+    Average_Sugar = mean(sugar_g, na.rm = TRUE)
+  )
+
+# Display the summary
+nutritional_summary
+
+```
+```{r}
+# Create a visualization for average calories by category
+ggplot(nutritional_summary, aes(x = category, y = Average_Calories)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Calories by Starbucks Drink Category")
+```
+```{r}
+# Create a visualization for average calories by category
+ggplot(nutritional_summary, aes(x = category, y = Average_Fat)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Fat by Starbucks Drink Category")
+```
+```{r}
+# Create a visualization for average calories by category
+ggplot(nutritional_summary, aes(x = category, y = Average_Sugar)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Sugar by Starbucks Drink Category")
+```
+
+ Histograms for Nutritional Content
+
+```{r}
+library(ggplot2)
+
+# Histogram for Calories
+ggplot(starbucks2, aes(x = calories)) +
+  geom_histogram(binwidth = 50, fill = 'blue', color = 'black') +
+  labs(title = "Histogram of Calories", x = "Calories", y = "Frequency")
+
+# Histogram for Total Fat
+ggplot(starbucks2, aes(x = total_fat_g)) +
+  geom_histogram(binwidth = 1, fill = 'red', color = 'black') +
+  labs(title = "Histogram of Total Fat", x = "Total Fat (g)", y = "Frequency")
+
+# Histogram for Sugar
+ggplot(starbucks2, aes(x = sugar_g)) +
+  geom_histogram(binwidth = 5, fill = 'green', color = 'black') +
+  labs(title = "Histogram of Sugar", x = "Sugar (g)", y = "Frequency")
+
+```
+Boxplots for Nutritional Content by Category
+
+```{r}
+# Boxplot for Calories by Category
+ggplot(starbucks2, aes(x = category, y = calories)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Calories by Category", x = "Category", y = "Calories")
+
+# Boxplot for Total Fat by Category
+ggplot(starbucks2, aes(x = category, y = total_fat_g)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Total Fat by Category", x = "Category", y = "Total Fat (g)")
+
+# Boxplot for Sugar by Category
+ggplot(starbucks2, aes(x = category, y = sugar_g)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Sugar by Category", x = "Category", y = "Sugar (g)")
+
+```
+
+Pairwise Relationships with Faceting (useful for multiple numeric variables)
+
+```{r}
+# Pairwise scatter plots for nutritional content
+pairs(starbucks[, c("calories", "total_fat_g", "sugar_g")])
+
+```
+
+The matrix of scatter plots shows the relationships between three variables: calories, total fat (in grams), and sugar (in grams). This type of visualization is often used in exploratory data analysis to quickly assess the pairwise relationships between multiple continuous variables.
+
+1. Calories vs. Total Fat: There is a positive correlation, indicating that as the fat content increases, the calorie content also tends to increase. This is expected, as fat has a high caloric density.
+
+2. Calories vs. Sugar: Similarly, there is a positive correlation, which means that higher sugar content in a beverage tends to be associated with higher calorie content. This is also expected since sugar is a carbohydrate that contributes to the total caloric intake.
+
+3. Total Fat vs. Sugar: This plot shows a less clear relationship compared to the other two. While there seems to be some level of positive association, the relationship does not appear to be as strong or as linear as with calories. This suggests that the fat and sugar content in beverages can vary independently to some extent.
+
+
+
+ Correlation Matrix Heatmap (for numerical variables)
+```{r}
+library(corrplot)
+
+# Calculate correlation matrix
+cor_matrix <- cor(starbucks[, c("calories", "total_fat_g", "sugar_g", "caffeine_mg")])
+
+# Correlation matrix heatmap
+corrplot(cor_matrix, method = "color")
+
+```
+The correlation matrix heatmap visualizes the Pearson correlation coefficients between several variables, typically to show how strongly each pair of variables is related.
+
+1. Dark Blue: Indicates a strong positive correlation.
+
+2. Light Blue: Indicates a moderate positive correlation. These squares show a relationship where the variables tend to increase together, but not as strongly as those in dark blue.
+
+3. White: Indicates a very weak or no correlation.
+
+4. Light Pink: Indicates a moderate negative correlation. In this case, as the value of one variable increases, the value of the other variable tends to decrease.
+
+5. Dark Red: Indicates a strong negative correlation. This would mean that an increase in one variable is strongly associated with a decrease in the other.
+
+Calories and total fat show a strong positive correlation. Calories and sugar also show a positive correlation, which seems slightly weaker than that between calories and fat. Caffeine does not show a strong correlation with calories, fat, or sugar, as indicated by the lighter color of these squares. The correlations between caffeine and the other variables are weaker, suggesting that the caffeine content in Starbucks beverages does not consistently increase or decrease with calorie, fat, or sugar content.
+
+## Verifying that statistical tests are reliable and valid (e.g. residual diagnostics, assumption checks)
+
+```{r}
+# Perform ANOVA for Calories
+anova_calories <- aov(calories ~ category, data = starbucks2)
+summary(anova_calories)
+
+```
+```{r}
+# Perform ANOVA for Fat
+anova_fat <- aov(total_fat_g ~ category, data = starbucks2)
+summary(anova_fat)
+```
+
+```{r}
+# Perform ANOVA for Sugar
+anova_sugar <- aov(sugar_g ~ category, data = starbucks2)
+summary(anova_sugar)
+
+```
+
+```{r}
+# Check for normality of residuals
+shapiro.test(residuals(anova_calories))
+shapiro.test(residuals(anova_fat))
+shapiro.test(residuals(anova_sugar))
+```
+None of the residuals from the ANOVA models for calories, fat, or sugar are normally distributed according to the Shapiro-Wilk test. This could have implications for the validity of any parametric tests (like ANOVA) that assume normality of residuals. Nonparametric methods or data transformation might be necessary for further analysis.
+
+
+```{r}
+# Check for homogeneity of variance
+bartlett.test(calories ~ category, data = starbucks2)
+bartlett.test(total_fat_g ~ category, data = starbucks2)
+bartlett.test(sugar_g ~ category, data = starbucks2)
+```
+
+The Bartlett test results indicate that the assumption of homogeneity of variances is violated for the variables calories, total fat, and sugar across the different categories. This is an important assumption for ANOVA, as the test assumes that variances are equal across groups or treatment levels.
+
+When the assumption of homogeneity of variances is violated we can proceed with Welch's ANOVA. Welch's ANOVA is a version of ANOVA that does not assume equal variances and can be a good alternative when the Bartlett test indicates significant differences in variances.
+
+```{r}
+# Welch's ANOVA for Calories
+welch_anova_calories <- oneway.test(calories ~ category, data = starbucks2)
+
+# Welch's ANOVA for Total Fat
+welch_anova_fat <- oneway.test(total_fat_g ~ category, data = starbucks2)
+
+# Welch's ANOVA for Sugar
+welch_anova_sugar <- oneway.test(sugar_g ~ category, data = starbucks2)
+
+# Output the results
+welch_anova_calories
+welch_anova_fat
+welch_anova_sugar
+
+```
+The Welch ANOVA results:
+
+1. Calories: The F-statistic is 89.069 with numerator degrees of freedom (df) of 4 and denominator df of 58.554. The p-value is less than 2.2e-16, which is extremely small.
+
+Interpretation: There is a statistically significant difference in the mean calorie content across the different categories of Starbucks beverages.
+
+2. Total Fat: The F-statistic is 346.69 with numerator df of 4 and denominator df of 42.545. The p-value is less than 2.2e-16, which is extremely small.
+
+Interpretation: There is a statistically significant difference in the mean total fat content across the different categories of Starbucks beverages.
+
+3. Sugar: The F-statistic is 9.8116 with numerator df of 4 and denominator df of 62.201. The p-value is 3.22e-06, which is also very small.
+
+Interpretation: There is a statistically significant difference in the mean sugar content across the different categories of Starbucks beverages.
+
+The results for all three nutritional content analyses (calories, fat, and sugar) suggest that the drink categories are significantly different in terms of their nutritional makeup. The next step is post-hoc analysis to determine which specific categories differ from each other. 
+
+Non-parametric Tests: Since the data is also not normally distributed, a non-parametric equivalent to ANOVA, like the Kruskal-Wallis test would be the best approach.
+
+```{r}
+# Kruskal-Wallis test for Calories
+kruskal_test_calories <- kruskal.test(calories ~ category, data = starbucks2)
+
+# Kruskal-Wallis test for Total Fat
+kruskal_test_fat <- kruskal.test(total_fat_g ~ category, data = starbucks2)
+
+# Kruskal-Wallis test for Sugar
+kruskal_test_sugar <- kruskal.test(sugar_g ~ category, data = starbucks2)
+
+# Output the results
+kruskal_test_calories
+kruskal_test_fat
+kruskal_test_sugar
+```
+
+Interpretation for non parametric test
+
+The Kruskal-Wallis test is a non-parametric method used to determine if there are statistically significant differences between the medians of three or more independent groups. It is an alternative to ANOVA when the assumptions are violated.
+
+The results of the Kruskal-Wallis tests:
+
+1. Calories: The Kruskal-Wallis chi-squared statistic is 87.835 with 4 degrees of freedom and a p-value < 2.2e-16. This extremely low p-value suggests that there is a statistically significant difference in the median calories among the different categories of Starbucks beverages.
+
+2. Total Fat: The Kruskal-Wallis chi-squared statistic is 169.73 with 4 degrees of freedom and a p-value < 2.2e-16. Similar to calories, this result indicates a statistically significant difference in the median total fat grams across the beverage categories.
+
+3. Sugar: The Kruskal-Wallis chi-squared statistic is 19.343 with 4 degrees of freedom and a p-value of 0.000673. The median sugar content also significantly varies across the categories.
+
+Based on the very low p-values in all three tests we reject the null hypothesis for each nutritional component, which states that there are no differences in medians across groups.
+
+Given these results, further investigation with post-hoc tests could be done to find exactly which categories differ from each other.
+
+One common post hoc test for the Kruskal-Wallis is the Dunn test.
+
+```{r}
+library(dunn.test)
+
+# Perform Dunn test for Calories
+dunn_test_calories <- dunn.test(starbucks2$calories, starbucks2$category, method="bonferroni")
+dunn_test_calories
+
+# Perform Dunn test for Total Fat
+dunn_test_fat <- dunn.test(starbucks2$total_fat_g, starbucks2$category, method="bonferroni")
+dunn_test_fat
+
+# Perform Dunn test for Sugar
+dunn_test_sugar <- dunn.test(starbucks2$sugar_g, starbucks2$category, method="bonferroni")
+dunn_test_sugar
+
+```
+Based on the Dunn test results of the post hoc analysis for the sugar content in different Starbucks beverage categories:
+
+Coffee vs. Chocolate drinks: There is a statistically significant difference in sugar content between Coffee and Chocolate categories, with Coffee likely having less sugar than Chocolate, given the positive z-value (3.372067) and a very small adjusted p-value (p < 0.05 after Bonferroni adjustment).
+
+Other vs. Tea: The "Other" category and Tea also show a statistically significant difference, with Tea likely having more sugar, as suggested by the positive z-value (2.665503) and a small adjusted p-value (p < 0.05 after Bonferroni adjustment).
+
+Chocolat vs. Tea: The Chocolat drink category and Tea also show a statistically significant difference, with Chocolat drinks likely having more sugar, as suggested by the positive z-value (2.989352) and a small adjusted p-value (p < 0.05 after Bonferroni adjustment).
+
+The other pairwise comparisons between categories did not show statistically significant differences in sugar content after adjusting for multiple comparisons.
+########################################################
+
+Based on the Dunn test results of the post hoc analysis for the total fat content in different Starbucks beverage categories:
+
+Coffee vs. Chocolate drinks: There is a statistically significant difference in total fat content between Coffee and Chocolate categories, with Coffee likely having less total fat than Chocolate, given the positive z-value (7.187) and a very small adjusted p-value.
+  
+Coffee vs. Tea: There is also a statistically significant difference between Coffee and Tea, with Tea having more total fat than Coffee, as indicated by the positive z-value (9.407832) and a very small adjusted p-value (p < 0.05 after Bonferroni adjustment).
+
+Smoothie vs. Chocolat: The smoothie category and Chocolate drinks also show a statistically significant difference with positive z-value (4.514888 ) and a small adjusted p-value.
+
+Tea vs. Chocolat: The tea category and Chocolate drinks also show a statistically significant difference with positive z-value (12.21350 ) and a small adjusted p-value.
+
+The other pairwise comparisons between categories did not show statistically significant differences in total fat content after adjusting for multiple comparisons.
+######################################################
+
+
+Coffee vs. Chocolate drinks: There is a statistically significant difference in calorie content between Coffee and Chocolate categories, with Coffee likely having less total fat than Chocolate, given the positive z-value (6.889113) and a very small adjusted p-value.
+
+
+Chocolat vs. Other: The Chocolat drink category and other drinks also show a statistically significant difference with positive z-value (2.866311 ) and a small adjusted p-value.
+
+Chocolat vs. Tea: The Chocolat drink category and tea drinks also show a statistically significant difference with positive z-value (8.935500) and a small adjusted p-value.
+
+Chocolat vs. Tea: The Chocolat drink category and tea drinks also show a statistically significant difference with positive z-value (8.935500) and a small adjusted p-value.
+
+Coffee vs. Tea: The Chocolat drink category and tea drinks also show a statistically significant difference with positive z-value (5.649427) and a small adjusted p-value.
+
+Coffee vs. Tea: The Chocolat drink category and tea drinks also show a statistically significant difference with positive z-value (4.092518) and a small adjusted p-value.
+
+The other pairwise comparisons between categories did not show statistically significant differences in  calorie content after adjusting for multiple comparisons.
